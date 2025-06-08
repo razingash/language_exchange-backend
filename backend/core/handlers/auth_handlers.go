@@ -12,9 +12,9 @@ import (
 
 func Register(c fiber.Ctx) error {
 	body := c.Locals("body").(struct {
-		Username string `json:"full_name"`
-		Password string `json:"password"`
 		Email    string `json:"email"`
+		Password string `json:"password"`
+		Username string `json:"full_name"`
 	})
 
 	user, err := services.RegisterUser(body.Username, body.Password, body.Email)

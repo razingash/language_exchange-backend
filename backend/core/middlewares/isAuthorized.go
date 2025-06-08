@@ -25,14 +25,14 @@ func IsAuthorized(c fiber.Ctx) error {
 
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
-	userUUID, err := services.ExtractUUID(token)
+	userID, err := services.ExtractID(token)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid or expired token",
 		})
 	}
 
-	c.Locals("userUUID", userUUID)
+	c.Locals("userID", userID)
 
 	return c.Next()
 }

@@ -3,6 +3,7 @@ package db
 import (
 	"backend/main/config"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -46,6 +47,8 @@ func InitDB() {
 	if !isDatabaseExists {
 		if err := InitSchemaIfNeeded("../../core/db/migrations/models.sql"); err != nil {
 			log.Fatalf("Schema initialization error: %v", err)
+		} else {
+			InitializeLanguagesFromFile()
 		}
 	}
 }
@@ -129,4 +132,36 @@ func splitSQLStatements(sql string) []string {
 		}
 	}
 	return stmts
+}
+
+// languages initialization
+func InitializeLanguagesFromFile() error {
+	type LanguageEntry struct {
+		Name       string `json:"name"`
+		NativeName string `json:"nativeName"`
+	}
+	data, err := os.ReadFile("../../utils/languages.json")
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	var languageMap map[string]LanguageEntry
+	if err := json.Unmarshal(data, &languageMap); err != nil {
+		return fmt.Errorf("failed to parse JSON: %w", err)
+	}
+
+	for _, lang := range languageMap {
+		_, err := DB.Exec(context.Background(), `
+			INSERT INTO languages (name) 
+			VALUES ($1)
+			ON CONFLICT (name) DO NOTHING
+		`, lang.Name)
+
+		if err != nil {
+			return fmt.Errorf("failed to insert language %q: %w", lang.Name, err)
+		}
+	}
+
+	fmt.Println("Languages inserted successfully.")
+	return nil
 }

@@ -22,12 +22,12 @@ type Payload struct {
 	Iat int64  `json:"iat"` // issued at
 }
 
-func GenerateAccessToken(userUUID string) string {
+func GenerateAccessToken(userID string) string {
 	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`))
 	expiry := int64(600) // 10 minutes
 
 	payloadStruct := Payload{
-		Sub: userUUID,
+		Sub: userID,
 		Exp: time.Now().Unix() + expiry,
 		Iat: time.Now().Unix(),
 	}
@@ -40,19 +40,19 @@ func GenerateAccessToken(userUUID string) string {
 	return token
 }
 
-func GenerateRefreshToken(userUUID string) string {
+func GenerateRefreshToken(userID string) string {
 	randomBytes := make([]byte, 32)
 	rand.Read(randomBytes)
 
 	h := hmac.New(sha256.New, []byte(config.JWT_SECRET))
-	h.Write([]byte(userUUID))
+	h.Write([]byte(userID))
 	h.Write(randomBytes)
 
 	return base64.RawURLEncoding.EncodeToString(h.Sum(nil))
 }
 
-// gets uuid from access token payload, validated token must be passed
-func ExtractUUID(token string) (string, error) {
+// gets id from access token payload, validated token must be passed
+func ExtractID(token string) (string, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) == 3 {
 		if ValidateAccessToken(parts) {
@@ -122,7 +122,7 @@ func CheckAccessTokenRelevance(payload string) bool {
 
 // returns a new access token if the recharge token is OK, otherwise an error
 func GetNewAccessToken(token string) (int, string) {
-	var userUUID string
+	var userID string
 	var expTime time.Time
 	var revoked bool
 
@@ -130,13 +130,13 @@ func GetNewAccessToken(token string) (int, string) {
 		SELECT user_id, expires_at, revoked 
 		FROM refresh_tokens 
 		WHERE token = $1
-	`, token).Scan(&userUUID, &expTime, &revoked)
+	`, token).Scan(&userID, &expTime, &revoked)
 
 	if err != nil || revoked || time.Now().After(expTime) {
 		return 1, ""
 	}
 
-	return 0, GenerateAccessToken(userUUID)
+	return 0, GenerateAccessToken(userID)
 }
 
 // signature generation

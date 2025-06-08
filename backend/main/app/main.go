@@ -37,6 +37,7 @@ func main() {
 	db.InitDB()
 
 	routes.SetupAuthRoutes(app)
+	routes.SetupUsersRoutes(app)
 
 	log.Fatal(app.Listen(fmt.Sprintf(":%v", config.PORT)))
 }
