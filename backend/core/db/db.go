@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,6 +17,8 @@ var DB *pgxpool.Pool
 
 // initializes the database if it isn't initialized
 func InitDB() {
+	abs, _ := filepath.Abs("../../core/db/migrations/models.sql")
+	log.Println("Attempting to read schema SQL from:", abs)
 	err, isDatabaseExists := ensureDatabaseExists(config.Database_Url, config.Database_Name)
 	if err != nil {
 		log.Fatalf("Error checking/creating DB: %v", err)
@@ -41,7 +44,7 @@ func InitDB() {
 	}
 	log.Println("Successful connection to PostgreSQL")
 	if !isDatabaseExists {
-		if err := InitSchemaIfNeeded("../core/db/migrations/models.sql"); err != nil {
+		if err := InitSchemaIfNeeded("../../core/db/migrations/models.sql"); err != nil {
 			log.Fatalf("Schema initialization error: %v", err)
 		}
 	}

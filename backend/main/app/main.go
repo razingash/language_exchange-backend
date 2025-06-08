@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/core/db"
+	"backend/core/routes"
 	"backend/main/config"
 	"fmt"
 	"log"
@@ -34,6 +35,8 @@ func main() {
 	})
 
 	db.InitDB()
+
+	routes.SetupAuthRoutes(app)
 
 	log.Fatal(app.Listen(fmt.Sprintf(":%v", config.PORT)))
 }
