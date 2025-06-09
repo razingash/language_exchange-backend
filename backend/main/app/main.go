@@ -38,6 +38,7 @@ func main() {
 
 	routes.SetupAuthRoutes(app)
 	routes.SetupUsersRoutes(app)
+	routes.SetupRequestsRoutes(app)
 
 	log.Fatal(app.Listen(fmt.Sprintf(":%v", config.PORT)))
 }
