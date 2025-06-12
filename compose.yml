@@ -13,7 +13,7 @@ services:
 
   backend:
     build:
-      context: .
+      context: ./backend
     container_name: backendTD4
     env_file:
       - .env
