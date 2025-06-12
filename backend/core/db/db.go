@@ -45,7 +45,13 @@ func InitDB() {
 	}
 	log.Println("Successful connection to PostgreSQL")
 	if !isDatabaseExists {
-		if err := InitSchemaIfNeeded("../../core/db/migrations/models.sql"); err != nil {
+		var path string
+		if config.IsInDocker {
+			path = "/app/core/db/migrations/models.sql"
+		} else {
+			path = "../../core/db/migrations/models.sql"
+		}
+		if err := InitSchemaIfNeeded(path); err != nil {
 			log.Fatalf("Schema initialization error: %v", err)
 		} else {
 			InitializeLanguagesFromFile()
@@ -140,7 +146,13 @@ func InitializeLanguagesFromFile() error {
 		Name       string `json:"name"`
 		NativeName string `json:"nativeName"`
 	}
-	data, err := os.ReadFile("../../utils/languages.json")
+	var path string
+	if config.IsInDocker {
+		path = "./utils/languages.json"
+	} else {
+		path = "../../utils/languages.json"
+	}
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
 	}

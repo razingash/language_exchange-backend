@@ -13,12 +13,14 @@ var (
 	Database_Url  string
 	Database_Name string
 	PORT          string
+	IsInDocker    bool = false
 )
 
 // function to set environment variables
 func LoadConfig() {
 	if err := godotenv.Load("../../.env"); err != nil {
-		log.Println("Application missing .env file")
+		log.Println("Application startup via docker") // most likely
+		IsInDocker = true
 	}
 
 	JWT_SECRET = os.Getenv("JWT_SECRET")
