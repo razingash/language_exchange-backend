@@ -5,19 +5,19 @@ import (
 	"fmt"
 )
 
-func RegisterUser(username string, password string, email string) (*repositories.User, error) {
+func RegisterUser(username string, password string, email string) error {
 	hashedPassword, err := HashPassword(password)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	userUUID, err := repositories.CreateUser(username, hashedPassword, email)
+	err = repositories.CreateUser(username, hashedPassword, email)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &repositories.User{ID: userUUID}, nil
+	return nil
 }
 
 func LoginUser(email string, password string) (*repositories.User, string, error) {

@@ -13,7 +13,7 @@ func SetupRequestsRoutes(app *fiber.App) {
 
 	group.Post("/", handlers.CreateMatchRequest, middlewares.IsAuthorized, validators.ValidatePostMatchRequest)
 	group.Get("/incoming", handlers.GetIncomingMatchRequest, middlewares.IsAuthorized)
-	group.Get("/outcoming", handlers.GetOutgoingMatchRequest, middlewares.IsAuthorized)
+	group.Get("/outgoing", handlers.GetOutgoingMatchRequest, middlewares.IsAuthorized)
 	group.Get("/matches/", handlers.GetAcceptedMatchRequest, middlewares.IsAuthorized)
 	group.Put("/:id/accept", handlers.PutAcceptMatchRequest, middlewares.IsAuthorized, validators.ValidateMatchOwnership)
 	group.Put("/:id/decline", handlers.PutDeclineMatchRequest, middlewares.IsAuthorized, validators.ValidateMatchOwnership)

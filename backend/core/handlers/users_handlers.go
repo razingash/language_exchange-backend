@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"backend/core/repositories"
+	"database/sql"
 	"errors"
+	"log"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5"
@@ -19,6 +21,7 @@ func GetUserInfo(c fiber.Ctx) error {
 				"error": "User not found",
 			})
 		}
+		log.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to query user",
 		})
@@ -61,8 +64,7 @@ func GetTargetedUsers(c fiber.Ctx) error {
 	native := c.Query("native")
 	target := c.Query("target")
 
-	rows, err := repositories.SelectTargetedUsers(native, target, userID)
-
+	rows, err := repositories.SelectTargetedUsers(target, native, userID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch users",
@@ -70,18 +72,59 @@ func GetTargetedUsers(c fiber.Ctx) error {
 	}
 	defer rows.Close()
 
-	var users []fiber.Map
+	type userData struct {
+		ID       int
+		Email    string
+		FullName string
+		Natives  []int
+		Targets  []int
+	}
+
+	usersMap := make(map[int]*userData)
 
 	for rows.Next() {
-		var id int
-		var email, fullName string
-		if err := rows.Scan(&id, &email, &fullName); err != nil {
+		var (
+			id       int
+			email    string
+			fullName string
+			langID   sql.NullInt32
+			langType sql.NullString
+		)
+
+		if err := rows.Scan(&id, &email, &fullName, &langID, &langType); err != nil {
 			continue
 		}
+
+		user, exists := usersMap[id]
+		if !exists {
+			user = &userData{
+				ID:       id,
+				Email:    email,
+				FullName: fullName,
+			}
+			usersMap[id] = user
+		}
+
+		if !langID.Valid || !langType.Valid {
+			continue
+		}
+
+		switch langType.String {
+		case "native":
+			user.Natives = append(user.Natives, int(langID.Int32))
+		case "target":
+			user.Targets = append(user.Targets, int(langID.Int32))
+		}
+	}
+
+	var users []fiber.Map
+	for _, u := range usersMap {
 		users = append(users, fiber.Map{
-			"id":        id,
-			"email":     email,
-			"full_name": fullName,
+			"id":        u.ID,
+			"email":     u.Email,
+			"full_name": u.FullName,
+			"native":    u.Natives,
+			"target":    u.Targets,
 		})
 	}
 
@@ -90,8 +133,9 @@ func GetTargetedUsers(c fiber.Ctx) error {
 
 func UpdateUserLanguages(c fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
+	langs := c.Locals("languages").(repositories.Languages)
 
-	err := repositories.UpdateSelectedLanguages(userID)
+	err := repositories.UpdateSelectedLanguages(userID, langs)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update users",

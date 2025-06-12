@@ -11,19 +11,18 @@ type User struct {
 	Password string
 }
 
-func CreateUser(username string, password string, email string) (string, error) {
-	var userID string
-	err := db.DB.QueryRow(context.Background(), `
+func CreateUser(username string, password string, email string) error {
+	_, err := db.DB.Exec(context.Background(), `
         INSERT INTO users (full_name, password_hash, email) 
         VALUES ($1, $2, $3) 
         RETURNING id`,
 		username, password, email,
-	).Scan(&userID)
+	)
 
 	if err != nil {
-		return "", err
+		return err
 	}
-	return userID, nil
+	return nil
 }
 
 func SaveAccessToken(uuid string, accessToken string) error {

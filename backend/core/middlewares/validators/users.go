@@ -1,16 +1,14 @@
 package validators
 
 import (
+	"backend/core/repositories"
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v3"
 )
 
 func ValidateLanguages(c fiber.Ctx) error {
-	var body struct {
-		Native []int `json:"native"`
-		Target []int `json:"target"`
-	}
+	var body repositories.Languages
 
 	if err := json.Unmarshal(c.Body(), &body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

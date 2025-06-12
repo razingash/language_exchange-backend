@@ -48,14 +48,13 @@ func ValidateLoginInfo(c fiber.Ctx) error {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-
 	if err := json.Unmarshal(c.Body(), &body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid JSON",
 		})
 	}
 
-	if len(body.Password) < 6 {
+	if len(body.Password) <= 6 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"password": "Password must be at least 6 characters long",
 		})

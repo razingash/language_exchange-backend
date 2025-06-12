@@ -17,7 +17,7 @@ func Register(c fiber.Ctx) error {
 		Username string `json:"full_name"`
 	})
 
-	user, err := services.RegisterUser(body.Username, body.Password, body.Email)
+	err := services.RegisterUser(body.Username, body.Password, body.Email)
 	if err != nil {
 		if strings.Contains(err.Error(), "23505") {
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
@@ -33,23 +33,7 @@ func Register(c fiber.Ctx) error {
 		return err
 	}
 
-	accessToken := services.GenerateAccessToken(user.ID)
-	refreshToken := services.GenerateRefreshToken(user.ID)
-
-	err = repositories.SaveAccessToken(user.ID, accessToken)
-	if err != nil {
-		return nil
-	}
-
-	err = repositories.SaveRefreshToken(user.ID, refreshToken)
-	if err != nil {
-		return nil
-	}
-
-	return c.JSON(fiber.Map{
-		"access":  accessToken,
-		"refresh": refreshToken,
-	})
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func Login(c fiber.Ctx) error {

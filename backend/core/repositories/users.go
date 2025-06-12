@@ -42,27 +42,49 @@ func SelectUserLanguages(userID string) (pgx.Rows, error) {
 
 func SelectTargetedUsers(target string, native string, userID string) (pgx.Rows, error) {
 	ctx := context.Background()
-	var rows pgx.Rows
-	var err error
 
-	if native != "" && target != "" {
-		rows, err = db.DB.Query(ctx, `
-			SELECT u.id, u.email, u.full_name
-			FROM users u
-			JOIN user_languages ul1 ON ul1.user_id = u.id AND ul1.type = 'native' AND ul1.language_id = $1
-			JOIN user_languages ul2 ON ul2.user_id = u.id AND ul2.type = 'target' AND ul2.language_id = $2
-			WHERE u.id != $3
-		`, target, native, userID)
-	} else {
-		rows, err = db.DB.Query(ctx, `
-			SELECT id, email, full_name FROM users WHERE id != $1
-		`, userID)
+	baseQuery := `
+		SELECT 
+			u.id, u.email, u.full_name,
+			ul.language_id, ul.type
+		FROM users u
+	`
+
+	joins := []string{}
+	conditions := []string{"u.id != $1"}
+	args := []interface{}{userID}
+	argIndex := 2
+
+	if native != "" {
+		joins = append(joins, fmt.Sprintf(`
+			JOIN user_languages ul_native 
+				ON ul_native.user_id = u.id 
+				AND ul_native.type = 'native' 
+				AND ul_native.language_id = $%d
+		`, argIndex))
+		args = append(args, native)
+		argIndex++
 	}
-	return rows, err
+
+	if target != "" {
+		joins = append(joins, fmt.Sprintf(`
+			JOIN user_languages ul_target 
+				ON ul_target.user_id = u.id 
+				AND ul_target.type = 'target' 
+				AND ul_target.language_id = $%d
+		`, argIndex))
+		args = append(args, target)
+		argIndex++
+	}
+
+	joins = append(joins, "LEFT JOIN user_languages ul ON ul.user_id = u.id")
+
+	query := baseQuery + strings.Join(joins, "\n") + "\nWHERE " + strings.Join(conditions, " AND ") + "\nORDER BY u.id DESC"
+
+	return db.DB.Query(ctx, query, args...)
 }
 
-func UpdateSelectedLanguages(userID string) error {
-	var langs Languages
+func UpdateSelectedLanguages(userID string, langs Languages) error {
 	ctx := context.Background()
 	var (
 		values []string

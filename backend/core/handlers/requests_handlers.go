@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"backend/core/repositories"
+	"log"
 	"strconv"
 	"time"
 
@@ -15,17 +16,18 @@ func CreateMatchRequest(c fiber.Ctx) error {
 	value, err := strconv.Atoi(userID)
 
 	if err != nil {
+		log.Println(1, err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "broken jwt token", // ip should be banned, bcs token is forged
 		})
 	}
 
 	if value == toUserID {
+		log.Println(2, err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Cannot send match request to yourself",
 		})
 	}
-
 	requestID, err := repositories.InsertMatchRequest(userID, toUserID)
 
 	if err != nil {
@@ -61,10 +63,10 @@ func GetIncomingMatchRequest(c fiber.Ctx) error {
 	var requests []map[string]interface{}
 	for rows.Next() {
 		var id, fromUserID int
-		var status string
+		var status, fullName string
 		var createdAt time.Time
 
-		if err := rows.Scan(&id, &fromUserID, &status, &createdAt); err != nil {
+		if err := rows.Scan(&id, &fromUserID, &status, &createdAt, &fullName); err != nil {
 			continue
 		}
 		requests = append(requests, fiber.Map{
@@ -72,6 +74,7 @@ func GetIncomingMatchRequest(c fiber.Ctx) error {
 			"from_user_id": fromUserID,
 			"status":       status,
 			"created_at":   createdAt,
+			"full_name":    fullName,
 		})
 	}
 
@@ -93,10 +96,10 @@ func GetOutgoingMatchRequest(c fiber.Ctx) error {
 	var requests []map[string]interface{}
 	for rows.Next() {
 		var id, toUserID int
-		var status string
+		var status, fullName string
 		var createdAt time.Time
 
-		if err := rows.Scan(&id, &toUserID, &status, &createdAt); err != nil {
+		if err := rows.Scan(&id, &toUserID, &status, &createdAt, &fullName); err != nil {
 			continue
 		}
 		requests = append(requests, fiber.Map{
@@ -104,6 +107,7 @@ func GetOutgoingMatchRequest(c fiber.Ctx) error {
 			"to_user_id": toUserID,
 			"status":     status,
 			"created_at": createdAt,
+			"full_name":  fullName,
 		})
 	}
 
@@ -125,10 +129,10 @@ func GetAcceptedMatchRequest(c fiber.Ctx) error {
 	var matches []map[string]interface{}
 	for rows.Next() {
 		var id, fromID, toID int
-		var status string
+		var status, fullName string
 		var createdAt, updatedAt time.Time
 
-		if err := rows.Scan(&id, &fromID, &toID, &status, &createdAt, &updatedAt); err != nil {
+		if err := rows.Scan(&id, &fromID, &toID, &status, &createdAt, &updatedAt, &fullName); err != nil {
 			continue
 		}
 
@@ -139,6 +143,7 @@ func GetAcceptedMatchRequest(c fiber.Ctx) error {
 			"status":       status,
 			"created_at":   createdAt,
 			"updated_at":   updatedAt,
+			"full_name":    fullName,
 		})
 	}
 
